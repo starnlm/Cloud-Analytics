@@ -1,0 +1,19 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# Show all available Openstack images
+- name: Retrieve all available Openstack images
+  os_image_info:
+  register: image_result
+
+- name: Get image names and Ids
+  set_fact:
+    image_facts: "{{ image_facts|default([]) + [ {'name': item.name, 'id': item.id} ] }}"
+  loop: '{{ image_result.openstack_image }}'
+  when: item.name is defined
+
+- name: Show images
+  debug:
+    msg: "Image name: {{ item.name }}; Image id: {{ item.id }}"
+  loop: '{{ image_facts }}'

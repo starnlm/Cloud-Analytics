@@ -1,0 +1,53 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# Frontend tasks TBD
+  - name: Download Web
+    become: yes
+    unarchive:
+      src: https://github.com/s3554374/CCC-AS2/archive/refs/tags/0.3.zip
+      dest: /home/ubuntu
+      remote_src: yes 
+      mode: 0755
+
+  - name: Install Nginx
+    become: yes
+    apt:
+      name: nginx
+      state: latest
+      update_cache: yes
+
+  - name: Copy Website
+    become: yes
+    copy:
+      src: "{{ app_home }}"
+      dest: "{{ document_root }}"
+      mode: preserve
+      remote_src: yes
+
+  - name: Apply Nginx template
+    become: yes
+    template:
+      src: ../web/server.conf.j2
+      dest: /etc/nginx/sites-available/default
+
+  - name: Enable new site
+    file:
+      src: /etc/nginx/sites-available/default
+      dest: /etc/nginx/sites-enabled/default
+      state: link
+
+  - name: Allow all access to tcp port 80
+    become: yes
+    ufw:
+      rule: allow
+      port: '80'
+      proto: tcp
+# TODO: command: ngnix -s reload. this is timing out
+  - name: Restart Nginx
+    service:
+      name: nginx
+      state: restarted
+    become: yes
+ 

@@ -1,0 +1,96 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# Setting up docker instances
+# https://docs.docker.com/engine/install/ubuntu/
+
+- name: Uninstall old docker
+  tags: 'install_docker'
+  become: yes
+  apt:
+    name: ['docker', 'docker-engine', 'docker.io', 'containerd', 'runc']
+    state: absent
+
+- name: Install docker dependencies
+  tags: 'install_docker'
+  become: yes
+  apt:
+    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release']
+    state: latest
+    install_recommends: no
+    update_cache: yes
+
+- name: Add docker repo key
+  tags: 'install_docker'
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add docker repo to apt
+  tags: 'install_docker'
+  become: yes
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+
+# sudo apt-get install docker-ce docker-ce-cli containerd.io
+- name: Install docker engine
+  tags: 'install_docker'
+  become: yes
+  apt:
+    name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
+    state: latest
+    install_recommends: no
+    update_cache: yes
+
+# sudo apt-get install docker-compose
+- name: Install docker compose
+  tags: 'install_docker'
+  become: yes
+  apt:
+    name: ['docker-compose']
+    state: latest
+    install_recommends: no
+    update_cache: yes
+
+# Proxy setup for docker
+- name: Create proxy directory
+  tags: 'docker_proxy'
+  become: yes
+  file:
+    path: "/etc/systemd/system/docker.service.d/"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    recurse: yes
+    state: directory
+
+- name: create proxy file
+  tags: 'docker_proxy'
+  file:
+    path: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+    state: touch
+
+- name: Add to proxy file
+  tags: 'docker_proxy'
+  become: yes
+  blockinfile:
+    path: /etc/systemd/system/docker.service.d/http-proxy.conf
+    block: |
+      [Service]
+      Environment="HTTP_PROXY=http://wwwproxy.unimelb.edu.au:8000/" 
+      Environment="HTTPS_PROXY=http://wwwproxy.unimelb.edu.au:8000/" 
+      Environment="http_proxy=http://wwwproxy.unimelb.edu.au:8000/" 
+      Environment="https_proxy=http://wwwproxy.unimelb.edu.au:8000/" 
+      Environment="no_proxy=localhost,127.0.0.1,localaddress,172.16.0.0/12,.melbourne.rc.nectar.org.au,.storage.unimelb.edu.au,.cloud.unimelb.edu.au"
+
+- name: Flush changes
+  tags: 'docker_proxy'
+  become: yes
+  shell: systemctl daemon-reload
+
+- name: Restart Docker
+  tags: 'docker_proxy'
+  become: yes
+  shell: systemctl restart docker

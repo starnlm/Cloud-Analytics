@@ -1,0 +1,9 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+user: admin
+pass: admin
+couchdb_image: 'ibmcom/couchdb3:3.1.1'
+cookie: 'a192aeb9904e6590849337933b000c99'
+db_port: 5984

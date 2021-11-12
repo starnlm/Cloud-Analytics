@@ -1,0 +1,22 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+- name: Install pip
+  become: yes
+  apt:
+    name: ['python3-pip']
+    state: latest
+    update_cache: yes
+
+- name: Update pip
+  become: yes
+  pip:
+    name: ['pip']
+    state: latest
+
+- name: Install openstacksdk
+  pip:
+    name: ['openstacksdk==0.52']
+    state: latest
+# pip install openstacksdk

@@ -1,0 +1,27 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# Harvester/Analyser tasks
+# Folder is copied into super user home
+- name: Copy harvester folder to remote machine
+  become: yes
+  copy:
+    src: "{{ playbook_dir }}/../Harvester/"
+    dest: ~/Harvester/
+    mode: '777'
+    directory_mode: yes
+
+# Start stream api with docker compose
+- name: Start streaming harvester
+  become: yes
+  shell: docker-compose up --build -d
+  args:
+    chdir: ~/Harvester/StreamAPI
+
+# Start search api with docker compose
+- name: Start search harvester
+  become: yes
+  shell: docker-compose up --build -d
+  args:
+    chdir: ~/Harvester/SearchAPI

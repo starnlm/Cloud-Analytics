@@ -1,0 +1,25 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# Delete instances on NeCTAR
+- name: Delete instance
+  os_server:
+    name: '{{ item }}'
+    wait: yes
+    timeout: 600
+    state: absent
+  loop: "{{ lookup('file', 'host_vars/delete.txt').splitlines() }}"
+
+- name: Delete delete.txt
+  file:
+    path: host_vars/delete.txt
+    state: absent
+
+- name: add delete.txt
+  file:
+    path: host_vars/delete.txt
+    state: touch
+
+
+  

@@ -1,0 +1,8 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+server_name: "{{ ansible_default_ipv4.address }}"
+document_root: /var/www
+app_root: web
+app_home: /home/ubuntu/CCC-AS2-0.2/web

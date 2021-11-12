@@ -1,0 +1,13 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+volumes:
+  - device: /dev/vdb
+    mountpoint: /var/lib/docker
+  - device: /dev/vdc
+    mountpoint: /data
+
+ansible_user: ubuntu
+ansible_ssh_private_key_file: ~/.ssh/ubuntu.key
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

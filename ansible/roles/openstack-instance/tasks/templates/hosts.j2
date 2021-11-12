@@ -1,0 +1,4 @@
+[hosts]
+{% for ip in groups['hosts'] %}
+{{ip}}
+{% endfor %}

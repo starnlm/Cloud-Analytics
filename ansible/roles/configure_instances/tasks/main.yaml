@@ -1,0 +1,102 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# *** Setup instances with the base software and environment ***
+- name: Add proxies to /etc/environment for network access
+  become: yes
+  blockinfile:
+    path: /etc/environment 
+    block: |
+      HTTP_PROXY=http://wwwproxy.unimelb.edu.au:8000/
+      HTTPS_PROXY=http://wwwproxy.unimelb.edu.au:8000/
+      http_proxy=http://wwwproxy.unimelb.edu.au:8000/
+      https_proxy=http://wwwproxy.unimelb.edu.au:8000/
+      no_proxy=localhost,127.0.0.1,localaddress,172.16.0.0/12,.melbourne.rc.nectar.org.au,.storage.unimelb.edu.au,.cloud.unimelb.edu.au
+
+
+# *** Setup all the common software ***
+- name: Install pip
+  become: yes
+  apt:
+    name: ['python3-pip']
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Update pip
+  become: yes
+  pip:
+    name: ['pip']
+    state: latest
+
+
+# *** Other software under here if needed ***
+- name: Install other software for working with vms
+  become: yes
+  apt:
+    name: ['git', 'vim', 'curl', 'unzip']
+
+
+# *** Setup filesystem *** 
+- name: Install xfsprogs
+  tags: 'volumes'
+  become: yes
+  apt:
+    name: ['xfsprogs'] 
+    state: latest
+    install_recommends: no
+    update_cache: yes
+    
+# format the device using xfs
+- name: Make file system
+  tags: 'volumes'
+  become: yes
+  filesystem:
+    fstype: xfs
+    dev: "{{ item.device }}"
+  when: item.device is defined
+  with_items:
+    - "{{ volumes }}"
+
+# Check if mountpoint folder specified in vars exist in volumes and register results to directory_stats
+- name: Checking folders
+  tags: 'volumes'
+  become: yes
+  stat:
+    path: "{{ item.mountpoint }}"
+  register: directory_stats
+  with_items:
+    - "{{ volumes }}"
+
+# Creates folders using directory_stats obtained previously
+- name: Create directory
+  tags: 'volumes'
+  become: yes
+  file:
+    path: "{{ item.item.mountpoint }}"
+    recurse: yes
+    state: directory
+  when: item.stat.exists == false
+  with_items:
+    - "{{ directory_stats.results }}"
+
+# mount the volumes to their instances
+- name: Mount device
+  tags: 'volumes'
+  become: yes
+  mount:
+    path: "{{ item.mountpoint }}"
+    src: "{{ item.device }}"
+    fstype: xfs
+    state: mounted
+  when: item.device is defined
+  with_items:
+    - "{{ volumes }}"
+
+- name: Copy applications.ini
+  copy:
+    src: "{{ playbook_dir }}/inventory/applications.ini"
+    dest: ~/applications.ini
+    mode: '777'
+    directory_mode: yes

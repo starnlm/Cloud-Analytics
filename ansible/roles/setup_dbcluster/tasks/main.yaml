@@ -1,0 +1,90 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+- name: Check if cluster already exists
+  uri:
+    return_content: yes
+    url: "http://{{ user }}:{{ pass }}@{{ inventory_hostname }}:{{ db_port }}/_membership"
+    force_basic_auth: yes
+    status_code: 200,201,503
+    method: GET
+  register: result
+  
+- name: Print response 
+  debug:
+    msg: "{{result.json}}"
+  when: result.json is defined
+
+- name: Setup nodes as database nodes
+  uri:
+    url: "http://{{ user }}:{{ pass }}@{{ groups['masternode'][0] }}:{{ db_port }}/_cluster_setup"
+    force_basic_auth: yes
+    status_code: 200,201
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body: "{\"action\": \"enable_cluster\", \"bind_address\":\"0.0.0.0\",\
+             \"username\": \"{{ user }}\", \"password\":\"{{ pass }}\", \"port\": \"{{ db_port }}\",\
+             \"remote_node\": \"{{ item }}\", \"node_count\": \"{{ groups['dbcluster'] | length }}\",\
+             \"remote_current_user\":\"{{ user }}\", \"remote_current_password\":\"{{ pass }}\"}"
+  loop: "{{ groups['othernodes'] }}"
+  register: _result
+  until: _result.status == 200 or _result.status == 201
+  retries: 10
+  delay: 5
+
+- name: Add nodes to the the cluster
+  uri:
+    url: "http://{{ user }}:{{ pass }}@{{ groups['masternode'][0] }}:{{ db_port }}/_cluster_setup" 
+    force_basic_auth: yes
+    status_code: 200,201,409
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body: "{\"action\": \"add_node\", \"host\":\"{{ item }}\",\
+             \"port\": \"{{ db_port }}\", \"username\": \"{{ user }}\", \"password\":\"{{ pass }}\"}"
+  loop: "{{ groups['othernodes'] }}"
+  register: _result
+  until: _result.status == 200 or _result.status == 201 or _result.status == 409
+  retries: 10
+  delay: 5
+
+# Avoid Error message section
+- name: Avoid error message pt. 1
+  uri:
+    url: "http://{{ user }}:{{ pass }}@{{ groups['masternode'][0] }}:{{ db_port }}/" 
+    force_basic_auth: yes
+    status_code: 200,201
+    method: GET
+  register: _result
+  until: _result.status == 200 or _result.status == 201
+  retries: 10
+  delay: 5
+
+- name: Avoid error message pt. 2
+  uri:
+    url: "http://{{ user }}:{{ pass }}@{{ groups['masternode'][0] }}:{{ db_port }}/_cluster_setup" 
+    force_basic_auth: yes
+    status_code: 200,201,409
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body: "{\"action\": \"finish_cluster\"}"
+  when: result.json.msg is defined and result.json.msg.cluster_nodes is defined
+    
+# Check if working
+- name: Check cluster configuration
+  uri:
+    return_content: yes
+    url: "http://{{ user }}:{{ pass }}@{{ inventory_hostname }}:{{ db_port }}/_membership"
+    force_basic_auth: yes
+    status_code: 200,201
+    method: GET
+  register: _result
+  until: _result.status == 200 or _result.status == 201
+  retries: 10
+  delay: 5

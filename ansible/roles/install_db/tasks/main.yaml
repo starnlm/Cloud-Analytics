@@ -1,0 +1,59 @@
+---
+# Group 53, Melbourne, Perth, Uttar Pradesh
+# Team Members: Aditi Basu 1178282, Kevin Van 995203, Linan Jia 806003, Nand Lal Mishra 1245159, Zhirui Liang 1255971
+
+# All the stuff for couchdb here. TBD
+# Adapted from: https://github.com/AURIN/comp90024/tree/master/couchdb
+# Configuration: https://docs.couchdb.org/en/stable/setup/cluster.html 
+
+# *** Couchdb setup ***
+- name: Create folder for persistent storage
+  become: yes
+  file:
+    path: /data/couchdb
+    state: directory
+    mode: '777'
+
+- name: Stop existing couchdb containers
+  become: yes
+  docker_container:
+    name: 'couchdb-{{ inventory_hostname }}'
+    state: absent
+
+- name: Start couchdb containers via docker
+  become: yes
+  docker_container:
+    name: "couchdb-{{ inventory_hostname }}"
+    image: "{{ couchdb_image }}"
+    ports:
+      - "{{ db_port }}:{{ db_port }}" 
+      - "4369:4369"
+      - "9100:9100"
+    volumes:
+      - /data/couchdb:/opt/couchdb/data:rw
+    env:
+      COUCHDB_USER: "{{ user }}"
+      COUCHDB_PASSWORD: "{{ pass }}"
+      COUCHDB_SECRET: "{{ cookie }}"
+      NODENAME: "{{ inventory_hostname }}"
+      ERL_FLAGS: "-setcookie \"{{ cookie }}\" -name \"couchdb@{{ inventory_hostname }}\""
+
+- name: create vm.args
+  become: yes
+  file:
+    path: /etc/vm.args
+    state: touch
+
+- name: Change vm.args
+  become: yes
+  blockinfile:
+    path: /etc/vm.args
+    block: |
+      -name couchdb@{{ inventory_hostname }}
+      -setcookie {{ cookie }}
+      -kernel inet_dist_listen_min 9100
+      -kernel inet_dist_listen_max 9110
+
+- name: Pause for 10 seconds
+  pause:
+    seconds: 10
